@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Integer Ratio Approximation</title>
+    <script src="main.js" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .split-container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            align-content: flex-start;
+        }
+
+        .sidebar {
+            min-width: 10%;
+            max-width: 10%;
+        }
+
+        .main-content {
+            text-align: left;
+            padding: 0em;
+            padding-left: 3em;
+            height: 100%;
+            min-height: 100%;
+            overflow-x: auto;
+        }
+
+        #length-input {
+            width: 5em;
+        }
+
+        #compute-button {
+            width: 100%;
+        }
+
+        #precision-input {
+            width: 5em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Integer Ratio Approximation</h1>
+    <div class="split-container">
+        <div class="sidebar" style="width: 30%;">
+            <table>
+                <tr>
+                    <td> Length: </td>
+                    <td> <input type="number" id="length-input" name="length" placeholder="Enter length" value="2"
+                            min="2"> </td>
+                </tr>
+                <tr>
+                    <td>Decimals: </td>
+                    <td> <input type="number" id="precision-input" name="precision" placeholder="Enter precision"
+                            value="4" min="0" step="1"> </td>
+                </tr>
+            </table>
+            <button type="button" id="compute-button">Compute More</button>
+        </div>
+        <div class="main-content">
+            <table id="main-table">
+                <tr>
+                </tr>
+            </table>
+        </div>
+        <br>
+    </div>
+</body>
+
+</html>

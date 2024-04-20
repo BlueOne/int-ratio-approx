@@ -1,0 +1,28 @@
+{
+  "name": "int-ratio-typescript",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "serve dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/js-base64": "^3.3.1",
+    "@types/mathjs": "^9.4.2",
+    "@types/pako": "^2.0.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "js-base64": "^3.7.7",
+    "mathjs": "^12.4.1",
+    "pako": "^2.1.0"
+  }
+}
