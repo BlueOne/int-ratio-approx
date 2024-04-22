@@ -2,26 +2,67 @@
 <html>
 
 <head>
-    <title>Integer Ratio Approximation</title>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$','$'], ['\\(','\\)']],
+                displayMath: [['$$','$$'], ['\\[','\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml-full.js"
+            integrity="sha256-kbAFUDxdHwlYv01zraGjvjNZayxKtdoiJ38bDTFJtaQ="
+            crossorigin="anonymous">
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pseudocode@2.4.1/build/pseudocode.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/pseudocode@2.4.1/build/pseudocode.min.js">
+    </script>
+
+
     <script src="main.js" defer></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            /* font-family: Arial, sans-serif; */
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            margin: 0;
+            /* background-color: #1d1d1d;
+            color: #c4c4c4; */
         }
 
-        .split-container {
+        .header {
+            /* background-color: #f0f0f0; */
+            padding: 1em;
+            margin: 0em;
+            width: 900px;
+        }
+
+        .algorithm-container {
             display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
-            align-content: flex-start;
+            padding: 1em;
+            margin:0;
+
         }
 
-        .sidebar {
-            min-width: 10%;
-            max-width: 10%;
+        .algorithm-sidebar {
+            text-align: left;
+            /* width: 7em;
+            max-width: 7em; */
         }
 
-        .main-content {
+
+        .sidebar-input {
+            width: 3em;
+        }
+
+        #compute-button {
+            width: 100%;
+        }
+
+
+        .algorithm-main-content {
             text-align: left;
             padding: 0em;
             padding-left: 3em;
@@ -30,39 +71,91 @@
             overflow-x: auto;
         }
 
-        #length-input {
-            width: 5em;
+        #main-table td, th {
+            border: 1px solid rgb(233, 233, 233);
+            padding: 0px 8px;
+            margin: 0;
         }
 
-        #compute-button {
-            width: 100%;
+        #main-table input {
+            min-width: 2em;
+        }
+        /* #main-table th {
+            text-align: left;
+            padding: 2px 8px;
+        } */
+        #main-table {
+            border-collapse: collapse;
         }
 
-        #precision-input {
-            width: 5em;
+        #main-table tr:nth-child(4n+2) {
+            background-color: #f4f4f6ff;
         }
+        #main-table tr:nth-child(4n+3) {
+            background-color: #f4f4f6ff;
+        }
+
+        #main-table .output-row-primary {
+            font-weight: bold;
+        }
+
+        #main-table .output-row-secondary {
+            color: rgb(129, 129, 129);
+        }
+
+        #main-table .pivot-cell {
+            background-color: #fcfcb1 ;
+        }
+
+        .description {
+            background-color: #80808010;
+            padding: 1em;
+            margin-top: 4em;
+        }
+
+        .description-inner {
+            width: 900px;
+            padding: 0;
+        }
+
     </style>
 </head>
 
 <body>
-    <h1>Integer Ratio Approximation</h1>
-    <div class="split-container">
-        <div class="sidebar" style="width: 30%;">
+    <div class="header">
+        <title>Integer Ratio Approximation</title>
+        <h1>Integer Ratio Approximation</h1>
+        Approximate an n-dimensional ratio i.e. an element of <a
+        href="https://en.wikipedia.org/wiki/Real_projective_space">real projective space</a> with integer ratios. For
+    n = 2
+    this is the <a href="https://en.wikipedia.org/wiki/Continued_fraction">continued fraction</a> approximation.
+
+    </div>
+    <div class="algorithm-container">
+        <div class="algorithm-sidebar">
             <table>
                 <tr>
                     <td> Length: </td>
-                    <td> <input type="number" id="length-input" name="length" placeholder="Enter length" value="2"
-                            min="2"> </td>
+                    <td style="text-align:right;"> <input type="number" id="length-input" name="length" placeholder="Enter length" value="2"
+                            min="2" class = "sidebar-input"> </td>
                 </tr>
                 <tr>
                     <td>Decimals: </td>
-                    <td> <input type="number" id="precision-input" name="precision" placeholder="Enter precision"
-                            value="4" min="0" step="1"> </td>
+                    <td style="text-align:right;"> <input type="number" id="precision-input" name="precision" placeholder="Enter precision"
+                            value="5" min="0" step="1" class="sidebar-input"> </td>
+                </tr>
+                <tr>
+                    <td>Show Pivot: </td>
+                    <td style="text-align:right;"> <input type="checkbox" id="pivot-input" name="pivot"> </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button type="button" id="compute-button">Compute More</button>
+                    </td>
                 </tr>
             </table>
-            <button type="button" id="compute-button">Compute More</button>
         </div>
-        <div class="main-content">
+        <div class="algorithm-main-content">
             <table id="main-table">
                 <tr>
                 </tr>
@@ -70,6 +163,68 @@
         </div>
         <br>
     </div>
+    <div class="description">
+        <div class="description-inner">
+            <h2>Description</h2>
+            <p>Approximate an n-dimensional ratio i.e. an element of <a
+                    href="https://en.wikipedia.org/wiki/Real_projective_space">real projective space</a> with integer
+                ratios. Ratios are represented by nonzero n-dimensional vectors and two ratios are the same if the representing vectors differ only by multiplying with a real number. This algorithm outputs a sequence of ratios represented by integers, which converges to the input ratio. </p>
+            </p> 
+            <p> For n = 2, the algorithm is the <a href="https://en.wikipedia.org/wiki/Continued_fraction">continued fraction</a> algorithm. For example, the first three integer approximations of (3.14159 : 1.0) are (3 : 1), (22 : 7) = (3.1428... : 1.0), (333 : 106) = (3.14151... : 1.0). </p>
+
+                
+
+            
+            <h2>Usage</h2>
+            <h3>Input</h3>
+            <ol>
+                <li>Enter the number of inputs in the Length input. Enter the input ratio in the input boxes. </li>
+                <li>For short inputs, some approximations will be generated automatically. Click the "Compute More" button to generate more integer approximations. </li>
+                <li>The "Decimals" field controls the precision of the output. </li>
+            </ol>
+
+            The checkboxes allows masking input values. If the mask checkbox is unchecked, the algorithm proceeds as though the input value was not part of the input vector. However it will still display the output column of the masked value. For example, if the input is (3.14159 : 1.0 : 0.9) and the third value is masked, the output of the first two columns will be the same as if the input was (3.14159 : 1.0).
+            <br>
+            The algorithm input is saved in the URL. You can link to the page with specified the input.
+            <h3>Output</h3>
+            Each output is composed of two rows. 
+            <ol>
+                <li><strong>Bold</strong>: Integer Approximation. </li>
+                <li><span style="color: rgb(129, 129, 129);">Grey</span>: Multiple of the input, rescaled to be close to the integer approximation
+                </li>
+                <br><br>
+            </ol>
+            <h2>Algorithm</h2>
+            <pre id="hello-world-code">
+                \begin{algorithmic}
+                    \STATE \texttt{INPUT} Ratio $r=(r_1, r_2, \ldots, r_n)\in \mathbb{R}^n$
+                    \STATE \texttt{EMITS} Approximation $a\in\mathbb Z_{\geq 0}^n$\\
+                    \STATE $x \leftarrow r$
+                    \STATE $m \leftarrow n\times n\ \mathrm{Identity Matrix}$
+
+                    \WHILE {$\mathrm{max}_{1\geq i \geq n} \vert x_i\vert > \mathrm{tolerance}$}
+                        \STATE $pivot \leftarrow \mathrm{argmin}_{1\geq i \geq n} x_i$
+
+                        \FOR{$i=1$ to $n$}
+                            \IF {$i = pivot$} \CONTINUE \ENDIF
+                            \STATE $(q, r) \leftarrow \mathrm{divmod}(x_i, x_{pivot})$
+
+                            \STATE $x_i \leftarrow r$
+                            \STATE $m_{pivot, *} \leftarrow m_{pivot, *} + q m_{i, *}$
+                        \ENDFOR
+                        \STATE $\texttt{EMIT}(m_{pivot, *})$
+                    \ENDWHILE
+
+                \end{algorithmic}
+            </pre>
+            <script>
+                pseudocode.renderElement(document.getElementById("hello-world-code"));
+            </script>
+            <br>
+            <a href="https://github.com/BlueOne/int-ratio-approx">Source Code</a>
+        </div>
+    </div>
+
 </body>
 
 </html>

@@ -10,14 +10,25 @@ class Model {
     private values: Array<number> = [3.14159, 1.0];
     private length: number = this.values.length;
     private mask: Array<boolean> = [true, true];
-    private precision: number = 4;
+    private precision: number = 5;
+    private showPivot: boolean = false;
 
     // Computed state
     private finished: boolean = false;
     private ratioOutputs: Array<Array<number>> = [];
     private ratioScalars: Array<number> = [];
+    private directory: string = '';
+    private pivotSequence: Array<number> = [];
 
     private constructor() {
+        let url = new URL(window.location.href);
+        this.directory = url.pathname.replace('index.html', '');
+    }
+
+    private resetComputedState(): void {
+        this.ratioOutputs = [];
+        this.ratioScalars = [];
+        this.pivotSequence = [];
     }
 
 
@@ -29,10 +40,9 @@ class Model {
     }
 
     public restart(changeUrl: boolean=true): void {
-        this.finished = false;
-        this.clearRatioOutputs();
-        this.clearRatioScalars();
-        Algorithm.getInstance().reset();
+        this.resetComputedState()
+        this.setFinished(false);
+        GUI.getInstance().resetUI();
 
         if (changeUrl) {
             this.changeUrl();
@@ -52,6 +62,7 @@ class Model {
         if (result) {
             this.addRatioOutput(result);
             this.addRatioScalar(algorithm.ratioFactor());
+            this.addPivot(algorithm.getCurrentPivot());
         } else {
             this.setFinished(true);
         }
@@ -61,7 +72,12 @@ class Model {
 
     public changeUrl(): void {
         let serialized = this.serializeState();
-        history.pushState({ model: serialized }, 'title', '/index.html?state=' + serialized);
+        let urlString = this.directory + 'index.html?state=' + serialized;
+        history.pushState({ model: serialized }, 'title', urlString);
+    }
+
+    public setDirectory(directory: string): void {
+        this.directory = directory;
     }
 
     public getValues(): Array<number> {
@@ -71,12 +87,15 @@ class Model {
     public setValues(values: Array<number>): void {
         this.values = values;
         this.length = values.length;
+        Algorithm.getInstance().setInputRatio(this.values);
 
         this.restart();
     }
 
     public setValue(i: number, value: number): void {
         this.values[i] = value;
+        Algorithm.getInstance().setInputRatio(this.values);
+        
         this.restart();
     }
 
@@ -86,6 +105,7 @@ class Model {
 
     public setMaskValue(i: number, value: boolean): void {
         this.mask[i] = value;
+        Algorithm.getInstance().setInputMask(this.mask);
         this.restart();
     }
 
@@ -126,27 +146,24 @@ class Model {
             this.values = this.values.slice(0, length);
             this.mask = this.mask.slice(0, length);
         }
+        Algorithm.getInstance().setInputRatio(this.values);
+
         this.restart();
     }
 
     public serializeState(): string {
         // json stringify, then zip, then base64 encode
-        try {
-            let stringified = JSON.stringify({
-                v: this.values,
-                m: this.mask,
-                p: this.precision,
-                l: this.length
-            });
+        let stringified = JSON.stringify({
+            v: this.values,
+            m: this.mask,
+            p: this.precision,
+            pv: this.showPivot
+        });
 
-            let zipped = pako.deflate(stringified);
-            let base64encoded = Base64.fromUint8Array(zipped);
+        let zipped = pako.deflate(stringified);
+        let base64encoded = Base64.fromUint8Array(zipped);
 
-            return base64encoded;
-        } catch (error) {
-            console.error('Error serializing state: ' + error);
-            return '';
-        }
+        return base64encoded;
     }
 
     public deserializeState(base64encoded: string): boolean {
@@ -158,17 +175,24 @@ class Model {
             let parsed = JSON.parse(stringified);
 
             let io = GUI.getInstance();
-            io.changeNumberOfInputs(parsed.l);
-            io.changePrecision(parsed.p);
 
             this.values = parsed.v;
             this.mask = parsed.m;
             this.precision = parsed.p;
-            this.length = parsed.l;
+            this.length = this.values.length;  
+            this.showPivot = parsed.pv;
 
+            this.setShowPivot(this.showPivot);
+
+            Algorithm.getInstance().setInputRatio(this.values);
+            Algorithm.getInstance().setInputMask(this.mask);
+
+            io.changeNumberOfInputs(this.length);
+            io.changePrecision(this.precision);
             io.notifyTopRowChanged();
-            Algorithm.getInstance().reset();
+
             this.restart(false);
+
             return true
         } catch (error) {
             console.error('Error deserializing state: ' + error);
@@ -204,12 +228,31 @@ class Model {
     public clearRatioScalars(): void {
         this.ratioScalars = [];
     }
+
+    public addPivot(pivot: number): void {
+        this.pivotSequence.push(pivot);
+    }
+
+    public getPivot(i: number): number {
+        return this.pivotSequence[i];
+    }
+
+    public setShowPivot(showPivot: boolean): void {
+        this.showPivot = showPivot;
+        GUI.getInstance().changeShowPivot(showPivot);
+        this.changeUrl();
+    }
+
+    public getShowPivot(): boolean {
+        return this.showPivot;
+    }
 }
+
+
+
 
 class GUI {
     private static instance: GUI;
-
-    private static showPivot: boolean = false;
 
     private mainTable: HTMLTableElement;
     private mainTableTopRow: HTMLTableRowElement;
@@ -236,6 +279,12 @@ class GUI {
                 this.deleteValueInput();
             }
         }
+    }
+
+    public changeShowPivot(showPivot: boolean): void {
+        let checkbox = document.getElementById('pivot-input') as HTMLInputElement;
+        checkbox.checked = showPivot;
+        this.redrawTable();
     }
 
     private addValueInput(value = "1"): void {
@@ -297,6 +346,9 @@ class GUI {
         precisionInput.value = Model.getInstance().getPrecision().toString();
         precisionInput.addEventListener('change', GUI.handlePrecisionChange);
 
+        let pivotInput = document.getElementById('pivot-input') as HTMLInputElement;
+        pivotInput.addEventListener('change', this.handleShowPivotChange);
+
         this.resetUI()
     }
 
@@ -351,29 +403,35 @@ class GUI {
             model.computeStep();
     }
 
+    public handleShowPivotChange(event: Event): void {
+        let targetElement = event.target as HTMLInputElement;
+        Model.getInstance().setShowPivot(targetElement.checked);
+    }
+
 
     private drawTableRow(i: number): void {
         let model = Model.getInstance();
         let results = model.getRatioOutputs();
-        let algorithm = Algorithm.getInstance();
 
         let ratio = results[i];
         let row = this.mainTable.insertRow(-1);
-        row.style.fontWeight = 'bold';
-        let pivot = algorithm.getCurrentPivot();
+        row.className = 'output-row-primary';
+
+        let pivot = Model.getInstance().getPivot(i);
         let length = Model.getInstance().getLength();
         for (let i = 0; i < length; i++) {
             let cell = row.insertCell(-1);
             cell.innerHTML = ratio[i].toString();
-            if (i == pivot && GUI.showPivot) {
-                cell.style.backgroundColor = 'LightGoldenRodYellow';
+            if (i == pivot && Model.getInstance().getShowPivot()) {
+                cell.className = 'pivot-cell';
             }
         }
         let factor = model.getRatioScalar(i);
         // scaled = values * factor
         let scaled = model.getValues().map((value) => value * factor);
         row = this.mainTable.insertRow(-1);
-        row.style.color = 'grey';
+        row.className = 'output-row-secondary';
+
         let precision = Model.getInstance().getPrecision();
         for (let i = 0; i < length; i++) {
             let cell = row.insertCell(-1);
@@ -428,6 +486,10 @@ class GUI {
     }
 
     public notifyDataChanged(): void {
+        this.redrawTable();
+    }
+
+    private redrawTable(): void {
         this.clearTable();
         let model = Model.getInstance();
         let results = model.getRatioOutputs();
@@ -440,10 +502,8 @@ class GUI {
     }
     
     public notifyPrecisionChanged(): void {
-        this.notifyDataChanged();
+        this.redrawTable();
     }
-
-
 }
 
 
@@ -452,11 +512,27 @@ class Algorithm {
     private m: math.Matrix;
     private x: math.Matrix;
     private pivotSequence: Array<number> = [];
+    private tolerance: number = 1e-10;
+    private inputRatio: Array<number> = [];
+    private inputMask: Array<boolean> = [];
 
-    private constructor() {
-        this.m = math.identity(2) as math.Matrix;
-        this.x = math.matrix(Model.getInstance().getValues()) as math.Matrix;
+    private constructor(inputRatio: Array<number> = [3.14159, 1], inputMask: Array<boolean> = [true, true]) {
+        this.inputRatio = inputRatio;
+        this.inputMask = inputMask;
+        this.m = math.identity(this.inputRatio.length) as math.Matrix;
+        this.x = math.matrix(this.inputRatio) as math.Matrix;
     }
+
+    public setInputRatio(inputRatio: Array<number>): void {
+        this.inputRatio = inputRatio;
+        this.reset() 
+    }
+
+    public setInputMask(inputMask: Array<boolean>): void {
+        this.inputMask = inputMask;
+        this.reset();
+    }
+
 
     public static getInstance(): Algorithm {
         if (!Algorithm.instance) {
@@ -466,30 +542,32 @@ class Algorithm {
     }
 
     public reset(): void {
-        this.m = math.identity(Model.getInstance().getLength()) as math.Matrix;
-        this.x = math.matrix(Model.getInstance().getValues()) as math.Matrix;
+        this.m = math.identity(this.inputRatio.length) as math.Matrix;
+        this.x = math.matrix(this.inputRatio) as math.Matrix;
         this.pivotSequence = [];
     }
 
-    public step(tolerance: number = 1e-10): Array<number> | null {
+    
+    public step(): Array<number> | null {
         // set pivot to be the index of the smallest value of x
         let pivot = -1;
         let smallest = Infinity;
         let belowTolerance = 0;
-        let mask = Model.getInstance().getMask()
-        let length = Model.getInstance().getLength();
+        let mask = this.inputMask;
+        let length = this.inputRatio.length;
 
         for (let i = 0; i < length; i++) {
             let value = this.x.get([i]);
-            if (value < tolerance || !mask[i]) {
+            if (value < this.tolerance || !mask[i]) {
                 belowTolerance++;
             }
-            if (value < smallest && value > tolerance && mask[i]) {
+            if (value < smallest && value > this.tolerance && mask[i]) {
                 smallest = value;
                 pivot = i;
             }
         }
 
+        // Check if we are done
         if (pivot == -1 || belowTolerance == length - 1) {
             return null;
         }
@@ -525,7 +603,7 @@ class Algorithm {
 
     public getCurrentApproximation(): Array<number> {
         let pivot = this.pivotSequence[this.pivotSequence.length - 1];
-        let length = Model.getInstance().getLength();
+        let length = this.inputRatio.length;
 
         let currentApproximation = [];
         for (let i = 0; i < length; i++) {
@@ -536,7 +614,7 @@ class Algorithm {
 
     public ratioFactor(): number {
         let currentApproximation = this.getCurrentApproximation();
-        let values = Model.getInstance().getValues();
+        let values = this.inputRatio;
 
         let sum = (a: Array<number>):number => {
             let result = 0;
@@ -557,11 +635,12 @@ class Algorithm {
 
 
 function initialize() : void {
-    let io = GUI.getInstance();
     let model = Model.getInstance();
 
     let url = new URL(window.location.href);
     let state = url.searchParams.get('state');
+    let dir = url.pathname.replace('index.html', '');
+    model.setDirectory(dir);
     if (state && state != "") {
         model.deserializeState(state);
     } else {
