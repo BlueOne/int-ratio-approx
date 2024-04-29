@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
-    "start": "serve dist"
+    "build-watch": "webpack --watch",
+    "start": "http-server dist",
+    "dev": "concurrently \"npm run start\" \"npm run build-watch\""
   },
   "keywords": [],
   "author": "",
@@ -14,13 +16,16 @@
   "devDependencies": {
     "@types/js-base64": "^3.3.1",
     "@types/mathjs": "^9.4.2",
+    "@types/node": "^20.12.7",
     "@types/pako": "^2.0.3",
+    "concurrently": "^8.2.2",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "assert": "^2.1.0",
     "js-base64": "^3.7.7",
     "mathjs": "^12.4.1",
     "pako": "^2.1.0"
