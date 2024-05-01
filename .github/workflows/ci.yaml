@@ -1,4 +1,4 @@
-name: CI
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 env:
   CI: false
@@ -42,16 +47,21 @@ jobs:
     #     npm run test
 
     - name: Upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: build
         path: dist
-    
-    - name: Deploy
-      uses: actions/github-pages@v3
-      with:
-        artifact: build
-        folder: dist
-        cname: ${{ secrets.CNAME }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist
+  
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/github-pages@v4
+        with:
+          artifact: build
