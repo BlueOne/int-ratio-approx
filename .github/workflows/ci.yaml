@@ -48,13 +48,16 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: 'github-pages'
-        path: 'dist'
+        name: github-pages
+        path: ./dist
   
   deploy:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
