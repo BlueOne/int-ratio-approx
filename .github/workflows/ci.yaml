@@ -13,8 +13,10 @@ permissions:
   id-token: write
   actions: write
 
-env:
-  CI: false
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 
 jobs:
   build:
