@@ -68,7 +68,6 @@ export class Algorithm {
             let sum = math.sum(pivotRow) as number;
             possiblePivots.push([pivot, pivotRow, sum, x_, precision]);
         }
-        console.log('Possible pivots:', possiblePivots);
 
         // Usually there should be only one pivot. If there are multiple, we select the pivot with smallest sum. 
         possiblePivots.sort((a, b) => (a[2] as number) - (b[2] as number));
@@ -87,8 +86,6 @@ export class Algorithm {
         }
 
         this.pivotSequence.push(pivot);
-
-        console.log('Pivot:', pivot, 'Approximation:', Algorithm.vecToArray(pivotRow), 'Precision:', inputPrecision, 'm:', this.m.valueOf(), 'x:', this.x.valueOf());
 
         return Algorithm.vecToArray(pivotRow);
     }
@@ -141,7 +138,6 @@ export class Algorithm {
             let value = this.x.get([i]);
             if (value < this.inputPrecision[i] || !mask[i]) {
                 belowTolerance += 1;
-                console.log("skipped " + i + " value: " + value + " precision: " + this.inputPrecision[i]);
                 continue;
             }
 
