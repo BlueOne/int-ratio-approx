@@ -45,4 +45,5 @@ jobs:
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
         folder: dist
-        clean: true        
+        clean: true
+        branch: gh-pages
