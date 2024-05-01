@@ -47,10 +47,10 @@ jobs:
     #     npm run test
 
     - name: Upload
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: build
-        path: dist
+        name: 'github-pages'
+        path: 'dist'
   
   deploy:
     name: Deploy
@@ -64,4 +64,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          artifact: build
+          token: ${{ secrets.GITHUB_TOKEN }}
