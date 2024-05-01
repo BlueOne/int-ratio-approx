@@ -48,6 +48,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
+        name: github-pages
         path: ./dist
   
   deploy:
@@ -65,4 +66,5 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          token: ${{ secrets.ACESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifact: github-pages
