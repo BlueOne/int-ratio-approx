@@ -41,10 +41,17 @@ jobs:
     #   run: |
     #     npm run test
 
-    - name: Deploy to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@v4
+    - name: Upload
+      uses: actions/upload-artifact@v2
       with:
-        token: ${{ secrets.ACCESS_TOKEN }}
+        name: build
+        path: dist
+    
+    - name: Deploy
+      uses: actions/github-pages@v3
+      with:
+        artifact: build
         folder: dist
-        clean: true
-        branch: gh-pages
+        cname: ${{ secrets.CNAME }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist
